@@ -7,8 +7,8 @@ const Notecard = ({note}) => {
 
 
   return (
-    <div className='card-body' style={{ backgroundColor: colors.colorBody}}>
-        <div>
+    <div className='card' style={{ backgroundColor: colors.colorBody}}>
+        <div className='card-body'>
             <textarea 
                 style={{ color: colors.colorText}}
                 defaultValue={body}>
