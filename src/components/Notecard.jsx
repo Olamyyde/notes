@@ -1,9 +1,15 @@
 import {useRef, useEffect, useState} from 'react'
 import Trash from '../icons/Trash'
-import { setNewOffset, autoGrow, setZIndex } from '../util'
+import {db} from '../appwrite/databases'
+import Spinner from '../icons/Spinner'
+import { setNewOffset, autoGrow, setZIndex, bodyParser} from '../util'
 
 const Notecard = ({ note }) => {
-    const body = JSON.parse(note.body)
+    const [saving, setSaving] = useState(false);
+
+    const keyUpTimer = useRef(null);
+
+    const body = bodyParser(note.body)
     const [position, setPosition] = useState(JSON.parse(note.position))
     const colors = JSON.parse(note.colors)
 
@@ -16,12 +22,6 @@ const Notecard = ({ note }) => {
     useEffect(() => {
         autoGrow(textAreaRef)
     }, [])
-
-    const autoGrow = (textarea) => {
-        const {current} = textAreaRef
-        current.style.height = "auto"
-        current.style.height = current.scrollHeight + "px"
-    }
 
     const mouseDown = (e) => {
         mouseStartPos.x = e.clientX
@@ -36,7 +36,37 @@ const Notecard = ({ note }) => {
     const mouseUp = () => {
         document.removeEventListener("mousemove", mouseMove);
         document.removeEventListener("mouseup", mouseUp);
+
+        const newPosition = setNewOffset(cardRef.current)
+        saveData("position", newPosition)
+        // db.notes.update(note.$id, { position: JSON.stringify(newPosition) })
     };
+
+    const handleKeyUp = async () => {
+        //1 - Initiate "saving" state
+        setSaving(true);
+     
+        //2 - If we have a timer id, clear it so we can add another two seconds
+        if (keyUpTimer.current) {
+            clearTimeout(keyUpTimer.current);
+        }
+     
+        //3 - Set timer to trigger save in 2 seconds
+        keyUpTimer.current = setTimeout(() => {
+            saveData("body", textAreaRef.current.value);
+        }, 2000);
+    };
+
+    const saveData = async (key, value) => {
+        const payload = { [key]: JSON.stringify(value) };
+        try {
+            await db.notes.update(note.$id, payload);    
+        } catch (error) {
+            console.error(error);
+        }
+        setSaving(false);
+    }
+
 
     const mouseMove = (e) => {
         const mouseMoveDir = {
@@ -70,9 +100,18 @@ const Notecard = ({ note }) => {
                 style={{ backgroundColor: colors.colorHeader }}
             >
                 <Trash />
+                {saving && (
+        <div className="card-saving">
+            <Spinner color={colors.colorText} />
+            <span style={{ color: colors.colorText }}>
+                Saving...
+            </span>
+        </div>
+    )}
             </div>
             <div className='card-body'>
                 <textarea
+                    onKeyUp={handleKeyUp}
                     ref={textAreaRef}
                     style={{ color: colors.colorText }}
                     defaultValue={body}
