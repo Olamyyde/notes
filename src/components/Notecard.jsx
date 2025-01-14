@@ -1,16 +1,19 @@
-import {useRef, useEffect, useState} from 'react'
+import {useRef, useEffect, useState, useContext, } from 'react'
 // import Trash from '../icons/Trash'
 import DeleteButton from './DeleteButton'
 import {db} from '../appwrite/databases'
 import Spinner from '../icons/Spinner'
 import { setNewOffset, autoGrow, setZIndex, bodyParser} from '../util'
+import { NoteContext } from '../context/NoteContext'
 
-const Notecard = ({ note, setNotes }) => {
+
+const Notecard = ({ note }) => {
     const [saving, setSaving] = useState(false);
 
     const keyUpTimer = useRef(null);
 
     const body = bodyParser(note.body)
+    const { setSelectedNote } = useContext(NoteContext);
     const [position, setPosition] = useState(JSON.parse(note.position))
     const colors = JSON.parse(note.colors)
 
@@ -22,6 +25,7 @@ const Notecard = ({ note, setNotes }) => {
 
     useEffect(() => {
         autoGrow(textAreaRef)
+        setZIndex(cardRef.current)
     }, [])
 
     const mouseDown = (e) => {
@@ -33,6 +37,7 @@ const Notecard = ({ note, setNotes }) => {
             document.addEventListener('mouseup', mouseUp)
 
             setZIndex(cardRef.current)
+            setSelectedNote(note)
         }
     }
     
@@ -101,7 +106,7 @@ const Notecard = ({ note, setNotes }) => {
                 className="card-header"
                 style={{ backgroundColor: colors.colorHeader }}
             >
-                <DeleteButton setNotes={setNotes} noteId={note.$id}/> 
+                <DeleteButton noteId={note.$id}/> 
                 {saving && (
         <div className="card-saving">
             <Spinner color={colors.colorText} />
@@ -118,7 +123,10 @@ const Notecard = ({ note, setNotes }) => {
                     style={{ color: colors.colorText }}
                     defaultValue={body}
                     onInput={() => autoGrow(textAreaRef)}
-                    onFocus={() => {setZIndex(cardRef.current)}}
+                    onFocus={() => {
+                        setZIndex(cardRef.current);
+                        setSelectedNote(note);
+                    }}
                     >
                     
                 </textarea>

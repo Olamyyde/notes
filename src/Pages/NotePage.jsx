@@ -1,25 +1,18 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useContext} from "react";
+import Controls from "../components/Controls";
 import Notecard from "../components/Notecard";
-import { databases } from "../appwrite/config";
+import { NoteContext } from "../context/NoteContext";
 
 const NotesPage = () => {
-    const [notes, setNotes] = useState([]);
+    const {notes} = useContext(NoteContext);
 
-    useEffect(() => {
-        init();
-    }, [])
-
-    const init = async () => {
-        const response = await databases.listDocuments(import.meta.env.VITE_DATABASE_ID, import.meta.env.VITE_COLLECTION_NOTES_ID);
-        setNotes(response.documents);
-        console.log(response);
-    }
-
+    
     return (
     <div>
         {notes.map(note => (
-            <Notecard key={note.$id} note={note} setNotes={setNotes}/>
+            <Notecard key={note.$id} note={note} />
         ))}
+        <Controls />
     </div>
     )
 }
